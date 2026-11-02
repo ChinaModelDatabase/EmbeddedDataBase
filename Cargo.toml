@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/embedded-database-core",
+    "crates/embedded-database-kv",
+    "crates/embedded-database-embed",
+    "crates/embedded-database-bench",
+    "crates/embedded-database-flash",
+    "crates/embedded-database-os",
+    "crates/embedded-database-sql",
+    "crates/embedded-database-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.81"
+license = "Apache-2.0"
+repository = "https://github.com/caosunliu/EmbeddedDataBase"
+
+[workspace.dependencies]
+embedded-database-core = { path = "crates/embedded-database-core", version = "0.1.0", default-features = false }
+embedded-database-embed = { path = "crates/embedded-database-embed", version = "0.1.0" }
+embedded-database-kv = { path = "crates/embedded-database-kv", version = "0.1.0" }
+embedded-database-os = { path = "crates/embedded-database-os", version = "0.1.0" }
+embedded-database-flash = { path = "crates/embedded-database-flash", version = "0.1.0" }
+embedded-database-sql = { path = "crates/embedded-database-sql", version = "0.1.0", default-features = false }
+zerocopy = { version = "0.8", default-features = false, features = ["derive"] }
+bitflags = { version = "2", default-features = false }
+proptest = "1"
+
+[profile.release]
+panic = "abort"
+overflow-checks = true
+lto = "fat"
+codegen-units = 1

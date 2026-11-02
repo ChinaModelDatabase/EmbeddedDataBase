@@ -1,0 +1,22 @@
+# crates/embedded-database-cli/Cargo.toml
+[package]
+name = "embedded-database-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "embedded-database 交互式 SQL shell"
+
+[[bin]]
+name = "embedded-database-cli"
+path = "src/main.rs"
+
+[dependencies]
+embedded-database-core = { workspace = true }
+embedded-database-kv = { workspace = true, features = ["std"] }
+embedded-database-sql = { workspace = true, features = ["std"] }
+embedded-database-os = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

@@ -1,0 +1,19 @@
+[package]
+name = "embedded-database-flash"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "embedded-database 的裸闪存抽象、内存模拟设备与擦除块级 FTL"
+
+[dependencies]
+embedded-database-core = { workspace = true, default-features = false }
+
+[dev-dependencies]
+# 测试在 host 上编译，需要 embedded-database-core/std 导出的 Db/InMemoryDevice。
+# resolver v2：构建测试时 dev-dependency 特性与普通依赖统一。
+embedded-database-core = { workspace = true, features = ["std"] }
+
+[lints.rust]
+unsafe_code = "forbid"

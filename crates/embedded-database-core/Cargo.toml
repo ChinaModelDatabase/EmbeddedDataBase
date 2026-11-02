@@ -1,0 +1,24 @@
+[package]
+name = "embedded-database-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "embedded-database 存储引擎内核：确定性 + Flash 友好 + no_std"
+
+[features]
+default = []
+# 仅供测试与 bench 的 std 路径。生产构建必须 default-features = false。
+std = []
+
+[dependencies]
+zerocopy.workspace = true
+bitflags.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+
+[lints.rust]
+missing_debug_implementations = "warn"
+unsafe_code = "forbid"

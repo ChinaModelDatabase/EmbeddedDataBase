@@ -1,0 +1,18 @@
+[package]
+name = "embedded-database-os"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "embedded-database 操作系统层：Linux file 后端"
+
+[dependencies]
+embedded-database-core.workspace = true
+embedded-database-flash.workspace = true
+
+[dev-dependencies]
+embedded-database-core = { workspace = true, features = ["std"] }
+
+[lints.rust]
+unsafe_code = "forbid"

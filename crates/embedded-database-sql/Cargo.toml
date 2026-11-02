@@ -1,0 +1,26 @@
+# crates/embedded-database-sql/Cargo.toml
+[package]
+name = "embedded-database-sql"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "embedded-database SQL 词法/语法/执行引擎"
+
+[features]
+default = []
+# std 路径：启用完整 KvDb（embedded-database-kv/std），提供 SQL 执行器。
+# no_std 路径（default）：executor 不编译，保证裸机目标可编译（C1）。
+std = ["embedded-database-kv/std"]
+
+[dependencies]
+embedded-database-kv = { workspace = true }
+
+[dev-dependencies]
+embedded-database-core = { workspace = true, features = ["std"] }
+# 测试需要完整 KvDb（feature unification 在 test 构建中启用 embedded-database-kv/std）。
+embedded-database-kv = { workspace = true, features = ["std"] }
+
+[lints.rust]
+unsafe_code = "forbid"

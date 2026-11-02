@@ -1,0 +1,128 @@
+
+# cargo-vet config file
+
+[cargo-vet]
+version = "0.10"
+
+[imports.bytecode-alliance]
+url = "https://raw.githubusercontent.com/bytecodealliance/wasmtime/main/supply-chain/audits.toml"
+
+[imports.google]
+url = "https://raw.githubusercontent.com/google/supply-chain/main/audits.toml"
+
+[imports.mozilla]
+url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
+
+[imports.zcash]
+url = "https://raw.githubusercontent.com/zcash/rust-ecosystem/main/supply-chain/audits.toml"
+
+[policy.embedded-database-bench]
+criteria = "safe-to-deploy"
+
+[policy.embedded-database-cli]
+criteria = "safe-to-deploy"
+
+[policy.embedded-database-core]
+criteria = "safe-to-deploy"
+
+[policy.embedded-database-embed]
+criteria = "safe-to-deploy"
+
+[policy.embedded-database-kv]
+criteria = "safe-to-deploy"
+
+[policy.embedded-database-os]
+criteria = "safe-to-deploy"
+
+[policy.embedded-database-sql]
+criteria = "safe-to-deploy"
+
+[[exemptions.autocfg]]
+version = "1.5.1"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.cfg-if]]
+version = "1.0.5"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.fastrand]]
+version = "2.5.0"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.getrandom]]
+version = "0.3.4"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.lazy_static]]
+version = "1.5.1"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.libc]]
+version = "0.2.189"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.linux-raw-sys]]
+version = "0.12.1"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.once_cell]]
+version = "1.21.4"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.proptest]]
+version = "1.8.0"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.r-efi]]
+version = "5.3.0"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.rand]]
+version = "0.9.5"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.rand_chacha]]
+version = "0.9.0"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.rand_core]]
+version = "0.9.5"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.regex-syntax]]
+version = "0.8.11"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.rustix]]
+version = "1.1.5"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.rusty-fork]]
+version = "0.3.1"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.tempfile]]
+version = "3.24.0"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"
+
+[[exemptions.windows-sys]]
+version = "0.61.2"
+criteria = "safe-to-run"
+notes = "dev-only（proptest 及其传递依赖，不进入交付物）；未做人工审计，保留豁免以放行构建与测试。复审日期 2027-04-30（cargo-vet 0.10.2 不支持豁免 expires 字段——该字段会被下一次重写静默剥离，故以本 notes 约定）。"

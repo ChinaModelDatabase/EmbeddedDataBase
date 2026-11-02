@@ -1,0 +1,33 @@
+# cargo-deny 配置 — Spec 2「真实供应链审计」
+#
+# 校验（vendored 模式）：
+#   cargo deny --offline check licenses bans sources   # 可离线
+#   cargo deny check                                   # 四类，advisories 需网络（首次克隆 RustSec advisory-db）
+#
+# 决策依据：docs/superpowers/specs/2026-10-18-supply-chain-audit-design.md
+
+[advisories]
+# 不静默放行任何公告；如遇误报必须连同处置理由一起写入本文件并在提交信息中说明
+ignore = []
+
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "Unicode-3.0",
+]
+confidence-threshold = 0.8
+
+[licenses.private]
+ignore = false
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

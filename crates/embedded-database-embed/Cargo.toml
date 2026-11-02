@@ -1,0 +1,27 @@
+[package]
+name = "embedded-database-embed"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "embedded-database 公开嵌入 API"
+
+[features]
+default = []
+# std 路径：启用 embedded-database-core 的 std（Db/Txn 等导出），提供完整门面实现。
+# no_std 路径（default）：仅导出 Placeholder，保证裸机目标可编译（C1）。
+std = ["embedded-database-core/std"]
+
+[dependencies]
+embedded-database-core = { workspace = true, default-features = false }
+
+[dev-dependencies]
+# 测试在 host 上编译，需要 embedded-database-core/std 的 Db/InMemoryDevice，
+# 以及真文件后端 embedded-database-os::FileDevice（持久化用例）。
+# resolver v2：构建测试时 dev-dependency 特性与普通依赖统一。
+embedded-database-core = { workspace = true, features = ["std"] }
+embedded-database-os = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

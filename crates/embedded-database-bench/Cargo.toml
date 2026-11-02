@@ -1,0 +1,28 @@
+[package]
+name = "embedded-database-bench"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "embedded-database 开发期测试与基准工具"
+
+[dependencies]
+embedded-database-core = { workspace = true, features = ["std"] }
+embedded-database-kv = { workspace = true, features = ["std"] }
+embedded-database-os.workspace = true
+
+[[bin]]
+name = "inject_crash"
+path = "src/bin/inject_crash.rs"
+
+[[bin]]
+name = "scale_test"
+path = "src/bin/scale_test.rs"
+
+[[bin]]
+name = "wcet"
+path = "src/bin/wcet.rs"
+
+[lints.rust]
+unsafe_code = "forbid"

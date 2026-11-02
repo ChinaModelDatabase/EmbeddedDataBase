@@ -1,0 +1,38 @@
+
+# cargo-vet audits file
+
+[[audits.bitflags]]
+who = "embedded-database maintainers"
+criteria = "safe-to-deploy"
+version = "2.13.2"
+notes = """本地实质性审计 2026-10-18（Spec 2 §3.3 八项清单）：无 build.rs；unsafe 取证命令 `rg -n 'unsafe' vendor/bitflags/src` 命中 4 处 / 3 个文件——external.rs:236 与 external.rs:243 为 bytemuck Pod/Zeroable 的 unsafe impl（实际 unsafe 块，用于类型标记 trait 实现）、lib.rs:273 为 forbid(unsafe_code) 属性声明、internal.rs:17 为注释文本；无网络/进程/文件系统/环境变量访问（rg 'std::net|std::process|std::env|Command::new|env!' 零命中）；no_std 兼容（#![cfg_attr(not(any(feature = "std", test)), no_std)]）；MIT OR Apache-2.0，LICENSE-APACHE 与 LICENSE-MIT 均存在；Cargo.lock 与 vendor 版本均为 2.13.2。深度：结构性取证 + 关键路径抽样，未逐行。"""
+
+[[audits.proc-macro2]]
+who = "embedded-database maintainers"
+criteria = "safe-to-deploy"
+version = "1.0.107"
+notes = """本地实质性审计 2026-10-18（Spec 2 §3.3 八项清单）：build.rs 存在且已全文审阅（约 340 行）——环境变量访问限于 RUSTC（rustc_minor_version 调用 `rustc --version` 探测编译器版本，本地进程）、RUSTC_STAGE、RUSTC_BOOTSTRAP、RUSTC_WRAPPER、RUSTC_WORKSPACE_WRAPPER、TARGET、CARGO_ENCODED_RUSTFLAGS；进程调用仅 Command::new(rustc) 两类：--version 探测与 do_compile_probe 编译 src/probe/*.rs 特性探测文件到 OUT_DIR/probe，随后 fs::remove_dir_all 清理；文件系统写仅限 OUT_DIR 内（create_dir/remove_dir_all），不读写仓库或用户任意路径；无网络访问（无 TcpStream/http 客户端）。src 内取证命令 `rg -n 'std::net|TcpStream|std::process|Command::new|env!|std::env|fs::' vendor/proc-macro2/src` 仅命中 probe/proc_macro_span.rs:55 的 option_env!("RUSTC_BOOTSTRAP")（与 build.rs 探测逻辑配套的编译期常量）与 extra.rs:62 文档注释示例，无运行时副作用。unsafe 取证命令 `rg -n 'unsafe' vendor/proc-macro2/src` 命中 8 处子串 / 6 个实质行：lib.rs:91 为 deny(unsafe_op_in_unsafe_fn) 属性、fallback.rs:107 为 ManuallyDrop + ptr::read 的 NoDrop 移出（有 make_owned 配对）、fallback.rs:1002 与 wrapper.rs:802 的 unsafe fn from_str_unchecked（wrapper.rs:806 为其唯一 unsafe 调用点，入参为内部生成的字面量 repr）、lib.rs:1421-1422 为公开 unsafe API Literal::from_str_unchecked（信任边界在调用方）；crate 根 deny(unsafe_op_in_unsafe_fn)。no_std（lib.rs:86 #![no_std]，proc-macro/span-locations 为可选 feature）。MIT OR Apache-2.0，LICENSE-APACHE 与 LICENSE-MIT 均存在。Cargo.lock 与 vendor 版本均为 1.0.107。深度声明：build.rs 全文审阅；src 为结构性取证 + 关键路径抽样，6029 行未逐行。"""
+
+[[audits.syn]]
+who = "embedded-database maintainers"
+criteria = "safe-to-deploy"
+version = "2.0.119"
+notes = "本地实质性审计 2026-10-18（Spec 2 §3.3 八项清单）：无 build.rs（proc-macro 特性经 proc-macro2/quote 实现）；55 个 src 文件共 50120 行。环境/文件系统/进程/网络取证命令 `rg -n 'std::net|TcpStream|std::process|Command::new|env!|std::env|fs::' vendor/syn/src` 仅命中 file.rs:19-38 与 lib.rs:978 的文档注释示例（展示调用方如何用 std::fs::read_to_string 读文件再 parse_file），syn 自身运行时不访问文件系统、网络、进程或环境变量。unsafe 取证：`rg -o 'unsafe' vendor/syn/src | wc -l` = 205 个子串命中，排除 tests/ 后按文件分布（rg -c '\bunsafe\b'）为 buffer.rs 30、item.rs 18、expr.rs 6、token.rs 4、stmt.rs 4、attr.rs 4、ty.rs 3、thread.rs 2、parse.rs 2、scan_expr.rs/ident.rs/discouraged.rs 各 1、gen/token.css 1；实质归类——item.rs/expr.rs/stmt.rs/attr.rs/ty.rs/ident.rs/scan_expr.rs/gen 的命中全部是 Rust `unsafe` 关键字作为 AST 节点（Token![unsafe] 解析与文档描述），非 syn 代码执行 unsafe；真实 unsafe 集中于 token 流缓冲与生命周期桥接：buffer.rs 30 处（TokenStream 游标指针算术，模块头注释声明承载本 crate 绝大部分 unsafe 并逐处论证）、thread.rs:12/18 为 ThreadBound 的 unsafe impl Sync/Send（注释论证 Send 需 Copy 约束）、token.rs:314/320 与 discouraged.rs:199、parse.rs:383/394 为 Cursor/WithSpan 的生命周期 transmute（parse.rs 附近有 proof 参数做借用期校验）。no_std（lib.rs:251 #![no_std]）。MIT OR Apache-2.0，LICENSE-APACHE 与 LICENSE-MIT 均存在。Cargo.lock 与 vendor 版本均为 2.0.119。深度声明：50120 行未逐行审阅；为结构性取证 + unsafe 归类与关键路径抽样。"
+
+[[audits.unicode-ident]]
+who = "embedded-database maintainers"
+criteria = "safe-to-deploy"
+version = "1.0.26"
+notes = "本地实质性审计 2026-10-18（Spec 2 §3.3 八项清单）：无 build.rs；2 个 src 文件共 957 行（lib.rs + unicode_tables.rs 生成表）。环境/文件系统/进程/网络取证命令 `rg -n 'std::net|TcpStream|std::process|Command::new|env!|std::env|fs::|include_' vendor/unicode-ident/src vendor/unicode-ident/benches` 零命中——纯查表函数，无任何 I/O。unsafe 取证命令 `rg -n 'unsafe' vendor/unicode-ident/src` 仅命中 2 处（lib.rs:270 与 lib.rs:283）：is_xid_start/is_xid_continue 中对 LEAF 查找表的 get_unchecked(offset)，offset 由先经 .get(ch/8/CHUNK).unwrap_or(&ZERO_* 回退表) 的 chunk 计算得出，越界安全由 TRIE/LEAF 表布局不变量保证（UCD 生成表，覆盖全部 char 值域）。no_std（lib.rs:244 #![no_std]）。许可证 (MIT OR Apache-2.0) AND Unicode-3.0，LICENSE-MIT、LICENSE-APACHE、LICENSE-UNICODE（UNICODE LICENSE V3）均存在。Cargo.lock 与 vendor 版本均为 1.0.26。深度声明：体量小（957 行），为结构性取证 + 全部 unsafe 点与 I/O 面核验，生成表内容未逐值校验。"
+
+[[audits.zerocopy]]
+who = "embedded-database maintainers"
+criteria = "safe-to-deploy"
+version = "0.8.59"
+notes = '本地实质性审计 2026-10-18（Spec 2 §3.3 八项清单）：build.rs 存在，逐条记录其受限访问——env::var_os("RUSTC")（233 行）、Command::new(rustc).arg("--version")（235 行，探测编译器版本以做 cfg/特性门控，本地进程调用）、fs::read_to_string("Cargo.toml")（128 行，读取自身清单做特性探测）；无网络访问（无 TcpStream/http 客户端）；src 内 env!/include_str! 命中（lib.rs 12 行、util/macros.rs 4 行、split_at.rs 1 行）均为文档链接中的 CARGO_PKG_VERSION 与 benches 文档属性，非运行时行为；另有 src/macros.rs:984 的 include_bytes! 命中，位于 include_value! 宏定义体内（$crate::transmute!(*::core::include_bytes!($file))），属宏模板字符串，仅在调用方展开时于编译期读取入参文件，zerocopy 自身运行时不访问文件系统；unsafe 取证命令 `rg -o "unsafe" vendor/zerocopy/src | wc -l` = 792（子串命中计数，含注释/文档文本中的 unsafe 字样），分布 19 个文件，按命中行数（rg -c）前列为 impls.rs 200、lib.rs 80、util/macros.rs 62、pointer/ptr.rs 56，集中在零拷贝类型转换路径；no_std 兼容（默认 no_std，alloc/std 为可选 feature）；BSD-2-Clause OR Apache-2.0 OR MIT；Cargo.lock 与 vendor 版本均 0.8.59。深度声明：792 处 unsafe 子串命中未逐处审阅，为结构性取证 + 关键路径抽样。'
+
+[[audits.zerocopy-derive]]
+who = "embedded-database maintainers"
+criteria = "safe-to-deploy"
+version = "0.8.59"
+notes = "本地实质性审计 2026-10-18（Spec 2 §3.3 八项清单）：proc-macro=true，无 build.rs；unsafe 取证（计数方法：`rg -o 'unsafe' vendor/zerocopy-derive/src | rg -v 'tests?/' | wc -l`，即排除 tests/ 与 output_tests/ 后对 `unsafe` 做子串计数）= 10 处，其准确归属为：2 处是 proc-macro 源码中的真实 unsafe——try_from_bytes.rs:336 的 unsafe 块（紧邻上方 SAFETY 注释论证 soundness）与 try_from_bytes.rs:398 的 unsafe fn gen_trivial_is_safe_unchecked；8 处是 quote! 模板字符串与 clippy 属性名中的字面 unsafe（project.rs:195；known_layout.rs:79、162、231；util.rs:871、977；lib.rs:24-25 的 clippy 属性声明），随宏展开输出到调用方或仅为属性名，非 proc-macro 实现自身执行的 unsafe；其余命中（全量口径 809 处子串 / 44 文件）在 output_tests/expected/ 的宏展开快照与测试代码中。环境/文件系统访问：取证命令 `rg 'std::env|env!|std::fs|std::net|TcpStream|std::process|Command' vendor/zerocopy-derive/src` 排除 output_tests/ 后零命中；仅有的 3 处命中均在 output_tests/mod.rs（:84 读环境变量 ZEROCOPY_BLESS、:85 env! 宏、:88 std::fs::write 落盘 bless 期望输出），该模块由 lib.rs:54-55 的 #[cfg(test)] 门控，仅在测试构建下参与编译，非测试代码无网络、进程、环境变量、文件系统访问。直接运行时依赖仅 proc-macro2/quote/syn（vendor Cargo.toml 声明 1.0.1 / 1.0.40 / 2.0.46[features=full]，本仓库 Cargo.lock 解析为 1.0.107 / 1.0.47 / 2.0.119，syn 2.0.119 作为普通依赖正常解析）；另有 dev-dependencies（dissimilar 1.0.9、prettyplease 0.2.17、rustversion 1.0、static_assertions 1.1、syn 2.0.46[visit]）声明于 vendor 中 zerocopy-derive 自身的 Cargo.toml，仅供其测试使用，不改变本仓库 Cargo.lock 解析图（lock 中无 dissimilar/prettyplease/rustversion/static_assertions 条目）；BSD-2-Clause OR Apache-2.0 OR MIT；Cargo.lock 与 vendor 版本均 0.8.59。深度声明：宏展开代码未逐行审阅，为结构性取证 + 关键路径抽样。"
