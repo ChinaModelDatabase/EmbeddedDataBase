@@ -234,9 +234,9 @@ pub struct Placeholder;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use embedded_database_os::FileDevice;
     use std::format;
     use std::path::PathBuf;
-    use embedded_database_os::FileDevice;
 
     #[test]
     fn 门面_基本读写往返() {

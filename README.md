@@ -4,8 +4,8 @@
 
 - 设计文档：`docs/superpowers/specs/2026-10-02-embedded-database-design.md`
 - 许可证：Apache-2.0
-- 状态：M1–M36 已核实完成，343 测试全绿（core 224 + kv 8 + os 7 + sql 72 + flash 19 + embed 10），
-  含 doctest 3 个（embed 2 + flash 1，Spec 3a/3b）；
+- 状态：M1–M36 已核实完成，348 测试全绿（core 224 + kv 8 + os 7 + sql 75 + flash 19 + embed 10
+  + bench/inject_crash 2），含 doctest 3 个（embed 2 + flash 1，Spec 3a/3b）；
   M37/M38 账本条目已核销为未实现（详见 `.superpowers/sdd/progress.md`）
 
 ## 构建
@@ -82,9 +82,9 @@ release 构建（`cargo run --release -p embedded-database-bench --bin wcet`）�
 
 | 操作 | n | min | p50 | p99 | max | 预算 |
 |------|---|-----|-----|-----|-----|------|
-| db_put | 1000 | 125ns | 167ns | 209ns | 2125ns | 10000ns |
-| db_get | 1000 | 0ns | 42ns | 84ns | 125ns | 10000ns |
-| db_commit | 1000 | 83ns | 125ns | 125ns | 291ns | 10000ns |
+| db_put | 200 | 125ns | 167ns | 209ns | 2125ns | 10000ns |
+| db_get | 200 | 0ns | 42ns | 84ns | 125ns | 10000ns |
+| db_commit | 200 | 83ns | 125ns | 125ns | 291ns | 10000ns |
 
 说明：
 

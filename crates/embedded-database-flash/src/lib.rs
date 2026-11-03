@@ -29,7 +29,7 @@ pub mod ftl;
 pub mod raw;
 pub mod sim;
 
+pub use embedded_database_core::Error;
 pub use ftl::{Ftl, FtlConfig, FtlStats};
 pub use raw::{FlashError, FlashResult, RawFlash};
 pub use sim::SimFlash;
-pub use embedded_database_core::Error;

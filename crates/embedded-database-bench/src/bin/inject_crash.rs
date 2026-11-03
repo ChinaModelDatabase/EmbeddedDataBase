@@ -2,11 +2,11 @@
 //!
 //! 退出码 0 = 全部通过；1 = 有失败。
 
-use std::process::ExitCode;
 use embedded_database_core::{
     recover, BlockDevice, Config, Db, Error, InMemoryDevice, SegmentConfig, SegmentWriter,
 };
 use embedded_database_os::FileDevice;
+use std::process::ExitCode;
 
 const SEGMENT_SIZE: usize = 1 << 20;
 const PAGE_SIZE: u32 = 4096;
@@ -122,13 +122,22 @@ fn check_multi_segment() -> Result<(), String> {
         w.append_page(0, b"seg1").unwrap();
         w.commit(1_700_000_001).unwrap();
     }
-    // 第 2 段：写一半崩溃。首写（段头）成功，后续写失败。
+    // 第 2 段：写一半崩溃。
+    //
+    // `SegmentWriter::new` 自己就会写多笔（段头 + PageRun 表清零 + 追加区清零，
+    // 见 core/src/writer.rs），所以注入「只允许 1 次写成功」时它可能直接返回
+    // `Error::Io`——与写入中途掉电同为合法崩溃点，必须按 Err 处理而不是 unwrap。
+    // 崩溃是否真的发生由下面的 `failed_writes` 断言兜底，否则本场景失去意义。
     dev.inject_write_failure(1);
     {
-        let mut w = SegmentWriter::new(&mut dev, cfg2).unwrap();
-        let _ = w.append_page(0, b"seg2-a");
-        let _ = w.append_page(1, b"seg2-b");
-        let _ = w.commit(1_700_000_002);
+        if let Ok(mut w) = SegmentWriter::new(&mut dev, cfg2) {
+            let _ = w.append_page(0, b"seg2-a");
+            let _ = w.append_page(1, b"seg2-b");
+            let _ = w.commit(1_700_000_002);
+        }
+    }
+    if dev.stats().failed_writes == 0 {
+        return Err("multi: 未触发注入的写失败——场景未覆盖崩溃路径".into());
     }
 
     let r = recover(&dev, &[cfg1, cfg2]).map_err(|e| format!("multi: {e:?}"))?;
@@ -205,7 +214,10 @@ fn check_file_backend_crash() -> Result<(), String> {
     static CRASH_PATH_COUNTER: std::sync::atomic::AtomicUsize =
         std::sync::atomic::AtomicUsize::new(0);
     let n = CRASH_PATH_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let path = std::env::temp_dir().join(format!("embedded-database-crash-{}-{n}.db", std::process::id()));
+    let path = std::env::temp_dir().join(format!(
+        "embedded-database-crash-{}-{n}.db",
+        std::process::id()
+    ));
     {
         let mut dev = FileDevice::open(&path, 1 << 20).map_err(|e| format!("file-open: {e:?}"))?;
         let cfg = Config::default();
@@ -266,5 +278,24 @@ fn main() -> ExitCode {
             eprintln!("  - {f}");
         }
         ExitCode::FAILURE
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn 多段崩溃后第一段仍可恢复() {
+        if let Err(e) = check_multi_segment() {
+            panic!("多段场景失败：{e}");
+        }
+    }
+
+    #[test]
+    fn 基线恢复识别完整提交() {
+        if let Err(e) = check_baseline() {
+            panic!("基线场景失败：{e}");
+        }
     }
 }

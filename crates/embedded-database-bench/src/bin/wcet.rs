@@ -2,10 +2,10 @@
 //!
 //! 打印 p50 / p99 / max / min，与预算对比。M2 的预算以此为基线。
 
-use std::time::Instant;
 use embedded_database_core::{
     Arena, BTree, Config, Db, InMemoryDevice, SegmentConfig, SegmentWriter, TxnOptions,
 };
+use std::time::Instant;
 
 const SEGMENT_SIZE: usize = 1 << 20;
 const PAGE_SIZE: u32 = 4096;

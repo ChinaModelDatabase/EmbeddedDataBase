@@ -176,6 +176,9 @@ fn execute_select(stmt: SelectStmt, db: &mut KvDb) -> Result<QueryResult, SqlErr
         .iter()
         .any(|c| matches!(c, SelectItem::Aggregate(_)));
 
+    // 聚合分支产出的 rows 按 SELECT 列表顺序对齐，投影时按下标取而非按列名查。
+    let mut aggregated = false;
+
     // HAVING 过滤（M26/M27）：在聚合折叠前、基于原始分组行计算。
     // M27：不依赖 stmt.columns 查找聚合列下标，直接从 having 表达式
     // 提取聚合函数并按分组计算。
@@ -235,6 +238,7 @@ fn execute_select(stmt: SelectStmt, db: &mut KvDb) -> Result<QueryResult, SqlErr
     }
 
     if has_group_by && has_aggregate {
+        aggregated = true;
         let group_col = stmt.group_by.first().map(|s| col_key(s)).unwrap_or("");
         let group_idx = columns.iter().position(|c| c == group_col);
         let mut groups: Vec<(String, Vec<Vec<Literal>>)> = Vec::new();
@@ -265,11 +269,15 @@ fn execute_select(stmt: SelectStmt, db: &mut KvDb) -> Result<QueryResult, SqlErr
         }
         rows = result_rows;
     } else if has_aggregate {
-        // 聚合函数（M24）：WHERE/JOIN 过滤后，将多行折叠为单行聚合结果
+        aggregated = true;
+        // 聚合函数（M24）：WHERE/JOIN 过滤后，将多行折叠为单行聚合结果。
+        // 结果按 SELECT 列表逐项对齐：聚合项给聚合值，非聚合列在缺少
+        // GROUP BY 时无定义，给 Null。
         let mut agg_result: Vec<Literal> = Vec::new();
         for item in &stmt.columns {
-            if let SelectItem::Aggregate(f) = item {
-                agg_result.push(compute_aggregate_value(*f, &rows));
+            match item {
+                SelectItem::Aggregate(f) => agg_result.push(compute_aggregate_value(*f, &rows)),
+                _ => agg_result.push(Literal::Null),
             }
         }
         rows = vec![agg_result];
@@ -320,6 +328,28 @@ fn execute_select(stmt: SelectStmt, db: &mut KvDb) -> Result<QueryResult, SqlErr
         return Ok(QueryResult { columns, rows });
     }
 
+    if aggregated {
+        // 聚合行的每一格已与 SELECT 列表逐项对齐，直接按下标输出，
+        // 聚合项用函数名作列名（AST 未保留 COUNT(id) 的实参，故不伪装列名）。
+        let proj_cols: Vec<String> = stmt
+            .columns
+            .iter()
+            .filter_map(|c| match c {
+                SelectItem::Column(name) => Some(String::from(col_key(name))),
+                SelectItem::Aggregate(f) => Some(String::from(aggregate_column_name(*f))),
+                SelectItem::Wildcard => None,
+            })
+            .collect();
+        let proj_rows = rows
+            .iter()
+            .map(|row| row.iter().take(proj_cols.len()).cloned().collect())
+            .collect();
+        return Ok(QueryResult {
+            columns: proj_cols,
+            rows: proj_rows,
+        });
+    }
+
     let proj_cols: Vec<String> = stmt
         .columns
         .iter()
@@ -355,6 +385,17 @@ fn col_key(name: &str) -> &str {
     match name.rsplit_once('.') {
         Some((_, last)) => last,
         None => name,
+    }
+}
+
+/// 聚合函数作结果列名（AST 未保留实参，只有函数本身）。
+fn aggregate_column_name(agg_fn: AggregateFn) -> &'static str {
+    match agg_fn {
+        AggregateFn::Count => "COUNT",
+        AggregateFn::Sum => "SUM",
+        AggregateFn::Avg => "AVG",
+        AggregateFn::Min => "MIN",
+        AggregateFn::Max => "MAX",
     }
 }
 
@@ -746,6 +787,72 @@ mod tests {
         let result = execute("SELECT COUNT(*) FROM users", &mut kv).unwrap();
         assert_eq!(result.rows.len(), 1);
         // M24 简化：COUNT 结果为行数
+    }
+
+    #[test]
+    fn 执行_select_count_返回计数值而非空行() {
+        let mut dev = InMemoryDevice::new(1 << 20);
+        let mut kv = KvDb::open(&mut dev, Config::default()).unwrap();
+        execute("INSERT INTO users (name) VALUES ('a')", &mut kv).unwrap();
+        execute("INSERT INTO users (name) VALUES ('b')", &mut kv).unwrap();
+        execute("INSERT INTO users (name) VALUES ('c')", &mut kv).unwrap();
+        let result = execute("SELECT COUNT(*) FROM users", &mut kv).unwrap();
+        assert_eq!(result.columns, vec![String::from("COUNT")]);
+        assert_eq!(result.rows, vec![vec![Literal::Integer(3)]]);
+    }
+
+    #[test]
+    fn 执行_select_sum_返回求和值而非空行() {
+        let mut dev = InMemoryDevice::new(1 << 20);
+        let mut kv = KvDb::open(&mut dev, Config::default()).unwrap();
+        execute("INSERT INTO users (age) VALUES (10)", &mut kv).unwrap();
+        execute("INSERT INTO users (age) VALUES (20)", &mut kv).unwrap();
+        let result = execute("SELECT SUM(age) FROM users", &mut kv).unwrap();
+        assert_eq!(result.columns, vec![String::from("SUM")]);
+        assert_eq!(result.rows, vec![vec![Literal::Integer(30)]]);
+    }
+
+    #[test]
+    fn 执行_select_group_by_返回分组列与聚合值() {
+        let mut dev = InMemoryDevice::new(1 << 20);
+        let mut kv = KvDb::open(&mut dev, Config::default()).unwrap();
+        execute(
+            "INSERT INTO users (dept, name) VALUES ('eng', 'alice')",
+            &mut kv,
+        )
+        .unwrap();
+        execute(
+            "INSERT INTO users (dept, name) VALUES ('eng', 'bob')",
+            &mut kv,
+        )
+        .unwrap();
+        execute(
+            "INSERT INTO users (dept, name) VALUES ('hr', 'carol')",
+            &mut kv,
+        )
+        .unwrap();
+        let result = execute("SELECT dept, COUNT(*) FROM users GROUP BY dept", &mut kv).unwrap();
+        assert_eq!(
+            result.columns,
+            vec![String::from("dept"), String::from("COUNT")]
+        );
+        let mut got: alloc::vec::Vec<(String, i64)> = result
+            .rows
+            .iter()
+            .map(|r| {
+                let dept = match r.first() {
+                    Some(Literal::StringLit(s)) => s.clone(),
+                    other => panic!("dept 列应为字符串，实际 {other:?}"),
+                };
+                let count = match r.get(1) {
+                    Some(Literal::Integer(v)) => *v,
+                    other => panic!("COUNT 列应为整数，实际 {other:?}"),
+                };
+                (dept, count)
+            })
+            .collect();
+        got.sort();
+        assert_eq!(got, vec![(String::from("eng"), 2), (String::from("hr"), 1)]);
     }
 
     #[test]

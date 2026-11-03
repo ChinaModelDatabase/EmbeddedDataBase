@@ -11,13 +11,17 @@ pub use flash::FileRawFlash;
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use std::path::PathBuf;
     use embedded_database_core::{BlockDevice, CompactionBudget, Config, Db};
+    use std::path::PathBuf;
 
     fn temp_path() -> PathBuf {
         static COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let n = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        std::env::temp_dir().join(format!("embedded-database-integ-{}-{}.db", std::process::id(), n))
+        std::env::temp_dir().join(format!(
+            "embedded-database-integ-{}-{}.db",
+            std::process::id(),
+            n
+        ))
     }
 
     #[test]
@@ -42,7 +46,8 @@ mod integration_tests {
 
     #[test]
     fn file_backend_落盘集成() {
-        let path = std::env::temp_dir().join(format!("embedded-database-flush-{}.db", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("embedded-database-flush-{}.db", std::process::id()));
         {
             let mut dev = FileDevice::open(&path, 1 << 20).unwrap();
             let mut db = Db::open(&mut dev, Config::default()).unwrap();

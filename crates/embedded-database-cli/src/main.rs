@@ -1,12 +1,12 @@
 // crates/embedded-database-cli/src/main.rs
 //! embedded-database 交互式 SQL shell。
 
-use std::io::{self, Write};
-use std::path::Path;
 use embedded_database_core::Config;
 use embedded_database_kv::KvDb;
 use embedded_database_os::FileDevice;
 use embedded_database_sql::{execute, Literal, QueryResult};
+use std::io::{self, Write};
+use std::path::Path;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();

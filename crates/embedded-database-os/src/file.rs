@@ -1,9 +1,9 @@
 //! Linux file 后端：用 `std::fs::File` 实现 `BlockDevice`。
 
+use embedded_database_core::{BlockDevice, Error, Result};
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
-use embedded_database_core::{BlockDevice, Error, Result};
 
 /// 基于文件的块设备。
 pub struct FileDevice {
@@ -74,7 +74,11 @@ mod tests {
     fn temp_path() -> PathBuf {
         static COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let n = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        std::env::temp_dir().join(format!("embedded-database-test-{}-{}.db", std::process::id(), n))
+        std::env::temp_dir().join(format!(
+            "embedded-database-test-{}-{}.db",
+            std::process::id(),
+            n
+        ))
     }
 
     #[test]

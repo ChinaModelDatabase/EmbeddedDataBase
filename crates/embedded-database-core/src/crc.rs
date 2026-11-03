@@ -120,7 +120,10 @@ mod tests {
 
     #[test]
     fn 哈希确定且区分大小写() {
-        assert_ne!(hash_bytes(b"embedded-database"), hash_bytes(b"embedded-databasE"));
+        assert_ne!(
+            hash_bytes(b"embedded-database"),
+            hash_bytes(b"embedded-databasE")
+        );
         // 空输入是 FNV 基址本身，不得与任何非空输入撞上。
         // 「确定性」由下面的黄金值锁定用例承担——把同一输入和自身比较
         // 是恒真的断言，改哪个常量都不会失败。

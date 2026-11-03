@@ -3,10 +3,10 @@
 //! 退出码 0 = 全部通过；1 = 有失败。
 //! 环境变量 `SCALE_N` 可覆盖记录数（默认 100_000_000），用于短程完整链路验证。
 
-use std::time::Instant;
 use embedded_database_core::Config;
 use embedded_database_kv::KvDb;
 use embedded_database_os::FileDevice;
+use std::time::Instant;
 
 const RECORD_COUNT: usize = 100_000_000;
 // 几何约束：append_start = SEGMENT_HEADER_SIZE(56) + max_pages × page_size × slots_per_page
